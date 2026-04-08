@@ -11,6 +11,11 @@ class GeminiSessionViewModel: ObservableObject {
   @Published var aiTranscript: String = ""
   @Published var toolCallStatus: ToolCallStatus = .idle
   @Published var openClawConnectionState: OpenClawConnectionState = .notConfigured
+  @Published var latestNutritionPayload: NutritionPayload?
+  @Published var latestMealName: String?
+  @Published var latestDailyStatus: NutritionDailyStatus?
+  @Published var latestGamification: NutritionGamification?
+  @Published var latestNextMealRecommendation: NutritionNextMealRecommendation?
   private let geminiService = GeminiLiveService()
   private let openClawBridge = OpenClawBridge()
   private var toolCallRouter: ToolCallRouter?
@@ -18,8 +23,10 @@ class GeminiSessionViewModel: ObservableObject {
   private let eventClient = OpenClawEventClient()
   private var lastVideoFrameTime: Date = .distantPast
   private var stateObservation: Task<Void, Never>?
+  private var latestFrameJPEGData: Data?
 
   var streamingMode: StreamingMode = .glasses
+  var mealJournalStore: MealJournalStore?
 
   func startSession() async {
     guard !isGeminiActive else { return }
@@ -96,7 +103,19 @@ class GeminiSessionViewModel: ObservableObject {
       Task { @MainActor in
         for call in toolCall.functionCalls {
           self.toolCallRouter?.handleToolCall(call) { [weak self] response in
-            self?.geminiService.sendToolResponse(response)
+            guard let self else { return }
+            if let toolResultText = self.extractToolResultText(from: response),
+               let payload = NutritionPayloadParser.decode(fromToolResultText: toolResultText) {
+              self.latestNutritionPayload = payload
+              self.latestMealName = payload.meal?.name
+              self.latestDailyStatus = payload.dailyStatus
+              self.latestGamification = payload.gamification
+              self.latestNextMealRecommendation = payload.nextMealRecommendation
+              if !payload.action.isEmpty {
+                self.mealJournalStore?.addEntry(payload: payload, imageJPEGData: self.latestFrameJPEGData)
+              }
+            }
+            self.geminiService.sendToolResponse(response)
           }
         }
       }
@@ -198,7 +217,19 @@ class GeminiSessionViewModel: ObservableObject {
     let now = Date()
     guard now.timeIntervalSince(lastVideoFrameTime) >= GeminiConfig.videoFrameInterval else { return }
     lastVideoFrameTime = now
+    latestFrameJPEGData = image.jpegData(compressionQuality: GeminiConfig.videoJPEGQuality)
     geminiService.sendVideoFrame(image: image)
+  }
+
+  private func extractToolResultText(from toolResponse: [String: Any]) -> String? {
+    guard let toolResponseDict = toolResponse["toolResponse"] as? [String: Any],
+          let functionResponses = toolResponseDict["functionResponses"] as? [[String: Any]],
+          let first = functionResponses.first,
+          let response = first["response"] as? [String: Any] else {
+      return nil
+    }
+    if let result = response["result"] as? String { return result }
+    return nil
   }
 
 }

@@ -22,6 +22,8 @@ struct StreamView: View {
   @ObservedObject var wearablesVM: WearablesViewModel
   @ObservedObject var geminiVM: GeminiSessionViewModel
   @ObservedObject var webrtcVM: WebRTCSessionViewModel
+  @ObservedObject var mealJournalStore: MealJournalStore
+  @State private var showMealJournal = false
 
   var body: some View {
     ZStack {
@@ -58,6 +60,12 @@ struct StreamView: View {
           Spacer()
 
           VStack(spacing: 8) {
+            NutritionDashboardCard(
+              geminiVM: geminiVM,
+              mealJournalStore: mealJournalStore,
+              onOpen: { showMealJournal = true }
+            )
+
             if !geminiVM.userTranscript.isEmpty || !geminiVM.aiTranscript.isEmpty {
               TranscriptView(
                 userText: geminiVM.userTranscript,
@@ -112,6 +120,11 @@ struct StreamView: View {
         if webrtcVM.isActive {
           webrtcVM.stopSession()
         }
+      }
+    }
+    .sheet(isPresented: $showMealJournal) {
+      NavigationStack {
+        LatestMealAnalysisView(store: mealJournalStore)
       }
     }
     // Show captured photos from DAT SDK in a preview sheet
