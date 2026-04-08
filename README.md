@@ -1,6 +1,6 @@
-# VisionClaw
+# NomClaw
 
-![VisionClaw](assets/teaserimage.png)
+![NomClaw](assets/teaserimage.png)
 
 A real-time AI assistant for Meta Ray-Ban smart glasses. See what you see, hear what you say, and take actions on your behalf -- all through voice.
 
@@ -63,8 +63,8 @@ Gemini Live API (WebSocket)
 ### 1. Clone and open
 
 ```bash
-git clone https://github.com/sseanliu/VisionClaw.git
-cd VisionClaw/samples/CameraAccess
+git clone https://github.com/sseanliu/NomClaw.git
+cd NomClaw/samples/CameraAccess
 open CameraAccess.xcodeproj
 ```
 
@@ -101,7 +101,7 @@ First, enable Developer Mode in the Meta AI app:
 
 ![How to enable Developer Mode](assets/dev_mode.png)
 
-Then in VisionClaw:
+Then in NomClaw:
 1. Tap **"Start Streaming"** in the app
 2. Tap the **AI button** for voice + vision conversation
 
@@ -112,7 +112,7 @@ Then in VisionClaw:
 ### 1. Clone and open
 
 ```bash
-git clone https://github.com/sseanliu/VisionClaw.git
+git clone https://github.com/sseanliu/NomClaw.git
 ```
 
 Open `samples/CameraAccessAndroid/` in Android Studio.
