@@ -69,6 +69,9 @@ class AudioManager {
   func startCapture() throws {
     guard !isCapturing else { return }
 
+    // Reset engine to clear any cached format info from previous sessions
+    audioEngine.reset()
+
     audioEngine.attach(playerNode)
     let playerFormat = AVAudioFormat(
       commonFormat: .pcmFormatFloat32,
@@ -79,7 +82,14 @@ class AudioManager {
     audioEngine.connect(playerNode, to: audioEngine.mainMixerNode, format: playerFormat)
 
     let inputNode = audioEngine.inputNode
-    let inputNativeFormat = inputNode.outputFormat(forBus: 0)
+    // Use actual hardware sample rate from audio session to avoid stale cached format
+    let hwSampleRate = AVAudioSession.sharedInstance().sampleRate
+    let inputNativeFormat = AVAudioFormat(
+      commonFormat: .pcmFormatFloat32,
+      sampleRate: hwSampleRate,
+      channels: 1,
+      interleaved: false
+    )!
 
     NSLog("[Audio] Native input format: %@ sampleRate=%.0f channels=%d",
           inputNativeFormat.commonFormat == .pcmFormatFloat32 ? "Float32" :
